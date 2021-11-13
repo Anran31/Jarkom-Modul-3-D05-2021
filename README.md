@@ -312,3 +312,197 @@ Setelah itu edit file `/etc/squid/squid.conf` menjadi
 ![9.2](imgs/9.2.JPG)
 
 kemudian jalankan command `service squid restart`
+
+## no. 10
+
+Transaksi jual beli tidak dilakukan setiap hari, oleh karena itu akses internet dibatasi hanya dapat diakses setiap hari Senin-Kamis pukul 07.00-11.00 dan setiap hari Selasa-Jum’at pukul 17.00-03.00 keesokan harinya (sampai Sabtu pukul 03.00)
+
+### Jawab
+
+#### Water7
+
+Buat file baru bernama `acl.conf` di folder squid dengan menjalankan command `nano /etc/squid/acl.conf` kemudian diisi dengan
+
+```bash
+    acl AVAILABLE_WORKING time MTWH 07:00-11:00
+    acl AVAILABLE_WORKING time TWHF 17:00-23:59
+    acl AVAILABLE_WORKING time WHFA 00:00-03:00
+```
+
+![10.1](imgs/10.1.JPG)
+
+Setelah itu edit file `/etc/squid/squid.conf` menjadi
+
+```bash
+    include /etc/squid/acl.conf
+
+    http_port 5000
+    visible_hostname jualbelikapal.d05.com
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Login
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+    http_access allow USERS AVAILABLE_WORKING
+    http_access deny all
+```
+
+![10.2](imgs/10.2.JPG)
+
+kemudian jalankan command `service squid restart`
+
+## no. 11
+
+Agar transaksi bisa lebih fokus berjalan, maka dilakukan redirect website agar mudah mengingat website transaksi jual beli kapal. Setiap mengakses google.com, akan diredirect menuju super.franky.yyy.com dengan website yang sama pada soal shift modul 2. Web server super.franky.yyy.com berada pada node Skypie
+
+### Jawab
+
+#### EniesLobby
+
+Edit file `nano /etc/bind/named.conf.local` dengan mengisi
+
+```bash
+    zone "super.franky.d05.com" {
+        type master;
+        file "/etc/bind/sunnygo/super.franky.d05.com";
+    };
+```
+
+![11.1](imgs/11.1.JPG)
+
+Kemudian buat folder sunnygo menggunakan command `mkdir /etc/bind/sunnygo`. Setelah itu jalankan command `cp /etc/bind/db.local /etc/bind/sunnygo/super.franky.d05.com`. Setelah itu edit file `nano /etc/bind/sunnygo/super.franky.d05.com` dengan mengisi
+
+```bash
+    $TTL    604800
+    @       IN      SOA     super.franky.d05.com. root.super.franky.d05.com. (
+                                2         ; Serial
+                            604800         ; Refresh
+                            86400         ; Retry
+                            2419200         ; Expire
+                            604800 )       ; Negative Cache TTL
+    ;
+    @       IN      NS      super.franky.d05.com.
+    @       IN      A       192.194.3.69 ; IP Skypie
+    www     IN      CNAME   super.franky.d05.com.
+    @       IN      AAAA    ::1
+```
+
+![11.2](imgs/11.2.JPG)
+
+kemudian jalankan command `service bind9 restart`
+
+#### Skypie
+
+Pertama, install `apache2`, `php`, `libapache2-mod-php7.0`, `wget`, dan `unzip`.
+
+Kemudian jalankan command `wget https://raw.githubusercontent.com/FeinardSlim/Praktikum-Modul-2-Jarkom/main/super.franky.zip` kemudian `unzip super.franky.zip`
+
+Setelah itu, pindah ke directory `/etc/apache2/sites-available`.Kemudian copy file `000-default.conf` menjadi file `super.franky.d05.com.conf`
+
+![11.4](imgs/11.4.JPG)
+
+Lalu setting file `super.franky.d05.com.conf` agar memiliki line `ServerName super.franky.d05.com`, `ServerAlias www.super.franky.d05.com`, dan `DocumentRoot /var/www/super.franky.d05.com`.
+
+![11.5](imgs/11.5.JPG)
+
+Kemudian bikin directory baru dengan nama `super.franky.d05.com` pada `/var/www/` menggunakan command `mkdir /var/www/super.franky.d05.com`. lalu copy isi dari folder `super.franky` yang telah didownload ke `/var/www/super.franky.d05.com`.
+
+Setelah itu jalankan command `a2ensite super.franky.d05.com` dan `service apache2 restart`
+![11.6](imgs/11.6.JPG)
+
+#### Water7
+
+Setelah itu edit file `/etc/squid/squid.conf` menjadi
+
+```bash
+    include /etc/squid/acl.conf
+
+    http_port 5000
+    visible_hostname jualbelikapal.d05.com
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Login
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+    acl google dstdomain google.com
+    http_access deny google
+    deny_info http://super.franky.d05.com/ google
+    http_access allow USERS AVAILABLE_WORKING
+    http_access deny all
+```
+
+![11.7](imgs/11.7.JPG)
+
+Kemudian edit file `/etc/resolv.conf` menjadi
+
+```bash
+    nameserver 192.194.2.2
+```
+
+![11.8](imgs/11.8.JPG)
+
+kemudian jalankan command `service squid restart`
+
+## no. 12
+
+Saatnya berlayar! Luffy dan Zoro akhirnya memutuskan untuk berlayar untuk mencari harta karun di super.franky.yyy.com. Tugas pencarian dibagi menjadi dua misi, Luffy bertugas untuk mendapatkan gambar (.png, .jpg), sedangkan Zoro mendapatkan sisanya. Karena Luffy orangnya sangat teliti untuk mencari harta karun, ketika ia berhasil mendapatkan gambar, ia mendapatkan gambar dan melihatnya dengan kecepatan 10 kbps
+
+### Jawab
+
+#### Water7
+
+Jalankan command `nano /etc/squid/acl-bandwidth.conf` untuk membuat file `acl-bandwidth.conf` yang diisi dengan
+
+```bash
+    acl images url_regex -i \.png$
+    acl images url_regex -i \.jpg$
+
+    delay_pools 2
+    delay_class 1 1
+    delay_parameters 1 1250/1250
+    delay_access 1 allow images
+    delay_access 1 deny all
+```
+
+![12.1](imgs/12.1.JPG)
+
+Kemudian tambahkan baris ini pada `/etc/squid/squid.conf`
+
+```bash
+    include /etc/squid/acl-bandwidth.conf
+```
+
+![12.2](imgs/12.2.JPG)
+
+Setelah itu jalankan command `service squid restart`
+
+## no. 13
+
+Sedangkan, Zoro yang sangat bersemangat untuk mencari harta karun, sehingga kecepatan kapal Zoro tidak dibatasi ketika sudah mendapatkan harta yang diinginkannya
+
+### Jawab
+
+#### Water7
+
+Edit file `acl-bandwidth.conf` menjadi
+
+```bash
+    acl images url_regex -i \.png$
+    acl images url_regex -i \.jpg$
+
+    delay_pools 2
+    delay_class 1 1
+    delay_parameters 1 1250/1250
+    delay_access 1 allow images
+    delay_access 1 deny all
+    delay_class 2 1
+    delay_parameters 2 none
+    delay_access 2 allow !images
+    delay_access 2 deny all
+```
+
+![13.1](imgs/13.1.JPG)
+
+Setelah itu jalankan command `service squid restart`
